@@ -27,7 +27,7 @@ system.time({
     #V8 denotes the imputation quality; V6 MAF
     with(infos_chr_sub, paste(chr, V3, V4, V5, sep = "_"))
   }
-}) # 37.5 sec
+}) 
 stopCluster(cl)
 
 sample <- fread2("/disk/disk1/UKB/Gene/Imputation/sampleID/ukb63726_imp_chr1_v3_s487296.sample")
@@ -44,25 +44,6 @@ df0 <- fread2(csv, select = c("f.eid","f.31.0.0","f.34.0.0","f.53.0.0",
 colnames(df0) <- c("f.eid","reportedSex","YearOfBirth","attendingDate",
                    "geneticSex","EthnicBackground",'BMI',
                    "is_caucasian","isOutliers")
-#500938
-
-# pdff <- pdff %>% filter(!is.na(pdff)) #n=40314
-# pdff2 <- pdff %>% filter(eid.63726 %in% sample$ID_1) #n=39404 (-910)
-# pdff2 <- pdff2 %>% left_join(df0,by=c('eid.63726'='f.eid'))
-# pdff3 <- pdff2 %>% filter(is.na(isOutliers))#n=39404
-# pdff4 <- pdff3 %>% filter(reportedSex==geneticSex)#n=39379 (-25)
-# pdff5 <- pdff4 %>% filter(is_caucasian==1)#n=34243 (-5136)
-# rel <- fread2("/disk/disk1/UKB/Gene/Relatedness/ukb63726_rel_s488264.dat")
-# pdff6 <- pdff5 %>% filter(!eid.63726 %in% rel[rel$Kinship > 0.08, "ID2"])
-# diff_ids_all <- setdiff(pdff5$eid.63726,pdff6$eid.63726)
-# id1 <- rel$ID1[rel$ID2%in%diff_ids_all]
-# id1_in_pdff <- intersect(id1,pdff5$eid.63726) #n=517
-# diff_ids_exclude_in_pdff5 <- unique(rel$ID2[rel$ID1%in%id1_in_pdff])
-# pdff7 <- pdff5 %>% filter(!eid.63726 %in% diff_ids_exclude_in_pdff5) #n=33718 (-525)
-
-
-
-
 df1 <- df0 %>% filter(is.na(isOutliers),
                       reportedSex==geneticSex,
                       is_caucasian==1)
@@ -100,7 +81,6 @@ simu <- snp_attach("/disk/disk1/workspace/liuzhenqiu/UKBB_full_V8_50_pdff.rds")
 G <- simu$genotypes
 length(G)
 
-
 pcs <- fread2(csv,select = c('f.eid',paste0('f.22009.0.',1:10)))
 pcs <- pcs %>% rename(eid=f.eid, sex = 'f.31.0.0',
                       yearofbirth='f.34.0.0',
@@ -113,7 +93,6 @@ pcs <- pcs %>% rename(eid=f.eid, sex = 'f.31.0.0',
 df6 <- df5 %>% left_join(pcs, by = c('f.eid'='eid'))
 #BMI <- ifelse(is.na(df6$BMI),median(df6$BMI,na.rm=T),df6$BMI)
 age2 <- (df6$age)^2
-#BMI2 <- BMI^2
 COVAR <- cbind(df6$yearofbirth,df6$sex,age2,
                df6$pc1,df6$pc2,df6$pc3,df6$pc4,df6$pc5,
                df6$pc6,df6$pc7,df6$pc8,df6$pc9,df6$pc10)
@@ -201,13 +180,11 @@ for(i in 1:length(snps)){
   }}
 fwrite(sample2,'/disk/disk1/workspace/liuzhenqiu/snps_query_data.csv')
 
-
-
 ####----------WINDOWS for subsequent analyses------------------------------------------------------------
 ###---manhattan plot-------------------------------------
 setwd('E:\\English Papers for writing\\PDFF-GWAS-MR')
 gwasPDFF <- readRDS('gwas0_PDFF_mhtest0426.rds')
-source('E:\\宝库\\manhattanPlot.R')
+source('E:\\manhattanPlot.R')
 pdff2 <- gwasPDFF %>% select(pval,chr,pos,snp) %>%
   rename(SNP=snp,CHR=chr,P=pval,BP=pos)
 pdff2 <- pdff2 %>% mutate(
@@ -232,7 +209,6 @@ library(lubridate)
 library(cowplot)
 library(survival)
 ukb <- fread('E:\\English Papers for writing\\have done\\ALCO-MAFLD\\ukb_alco_mafld.csv')
-#500938 184
 ukb2 <- ukb %>% mutate_if(
   is.character,
   function(x) ifelse(x == '',NA,x)) %>% 
@@ -242,7 +218,6 @@ ukb2 <- ukb %>% mutate_if(
     CancerInterval = time_length(ymd(f.40005.0.0)-ymd(f.53.0.0),'day'),
     survive = ifelse(is.na(f.40000.0.0),'survive','die')
   )
-
 ukb3 <- ukb2 %>% rename(
   eid = f.eid,sex = f.31.0.0,YearOfBirth = f.34.0.0,
   attendingCentre = f.54.0.0,
@@ -339,8 +314,6 @@ pdff <- pdff %>% mutate(
   HFCGRS=rs58542926*0.3080+rs188247550*0.2825+rs738408*0.2375+rs1229984*0.1673+rs2642438*0.0604+rs62226381*0.0547
   -rs1260326*0.0586-rs28601761*0.0618-rs7096937*0.0654-rs79905393*0.1130-rs429358*0.1150
 )
-
-
 cor.test(pdff$FRPDFF,pdff$HFCGRS)
 ggplot(pdff,aes(HFCGRS,FRPDFF))+
   geom_jitter()+
@@ -350,12 +323,7 @@ ggplot(pdff,aes(HFCGRS,FRPDFF))+
 grs <- grs %>% filter(!is.na(rs738408))
 ukb4 <- ukb3 %>% left_join(grs,by = c('eid'='ID_1'))
 ukb5 <-  ukb4 %>% filter(!eid %in% pdff$f.eid)
-##excluding the pdff set, n = 31377
-#500938 --> 469561
 ukb6 <- ukb5 %>% filter(!is.na(rs738408))
-##excluding individuals without genetic information, n = 13926
-#469561 --> 455635
-
 ukb6 <- ukb6 %>%
   mutate(
     age = year(dateAttendingCentre)-YearOfBirth,
@@ -394,11 +362,7 @@ ukb6 <- ukb6 %>%
     HFCGRS=rs58542926*0.3080+rs188247550*0.2825+rs738408*0.2375+rs1229984*0.1673+rs2642438*0.0604+rs62226381*0.0547
     -rs1260326*0.0586-rs28601761*0.0618-rs7096937*0.0654-rs79905393*0.1130-rs429358*0.1150
   )
-
 ukb7 <- ukb6 %>% filter(ethnic %in% c(1001,1002,1003))
-##excluding those withou white british enthnic background, n= 28605
-#455635 --> 427030
-
 ggplot(ukb7,aes(HFCGRS))+
   geom_density(adjust=3,color='#00468b',linewidth=2)+
   theme_bw()+
@@ -413,7 +377,6 @@ ukb7 <- ukb7 %>% mutate(
 fwrite(ukb7,'analyzingData.csv')  
 ##disease phenotypes
 ukb7 <- fread('analyzingData.csv')
-
 phenos <- fread('phenos.csv')
 phenos2 <- phenos %>% filter(eid %in% ukb7$eid)
 phenoGroup <- read.csv('phewas_results_old.csv')
@@ -424,12 +387,6 @@ phenos_freq <- as.data.frame(table(phenos2$PheCode)) %>%
 
 phenos_freq <- phenos_freq %>% mutate(Var1=as.numeric(as.character(Var1))) %>%
   rename(PheCode = Var1)
-#   left_join(diagData %>% select(PheCode,Phenotype),by = c('Var1'='PheCode')) %>%
-#   
-# phenos_freq <- phenos_freq %>% distinct(PheCode,.keep_all = TRUE)
-# 
-# fwrite(phenos_freq,'phenos_freq.csv')
-
 phenos3 <- phenos2 %>% filter(PheCode %in% phenos_freq$PheCode)
 PheCodes <- unique(phenos3$PheCode)
 Phenotypes <- unique(phenos3$Phenotype)
@@ -484,7 +441,6 @@ phewas_res <- phewas_res %>%
 #####phewas plot
 library(RColorBrewer)
 qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
-#处理后有73种差异还比较明显的颜色，基本够用
 col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, 
                            rownames(qual_col_pals))) 
 
@@ -539,452 +495,6 @@ ggplot()+
   scale_color_manual(values = c(col_vector[10:23]))+
   guides(color = guide_legend(title=NULL,ncol = 4))
 
-
-
-####biomarkers
-bios <- ukb7 %>% select(76,77,111:175,94,2,202,206)
-biomarkers <- names(bios)[1:67]
-df2 <- data.frame()
-for(i in 1:67){
-  y <- get(biomarkers[i],pos = bios)
-  fit <- lm(scale(y)~scale(HFCGRS)+age+sex+BMI,data = bios)
-  x <-  broom::tidy(fit)
-  df <- data.frame(SNP = 'MRI-HFC-PRS',
-                   Biomarker = biomarkers[i],
-                   beta = x$estimate[2],
-                   se=x$std.error[2],
-                   p = x$p.value[2])
-  df2 <- bind_rows(df2,df)
-}
-df2 <- df2 %>% mutate(
-  fdr = p.adjust(p,'fdr')
-)
-write.csv(df2,'biomarkers_HFCGRS.csv',row.names = F)
-
-####-----single snp on disease---------------------------------------------------------------
-
-###rs738408
-tempData <- ukb7 %>% select(eid,rs738408,sex,age,smokingStatus,averageTotalIncome,aolIntakeFreq,
-                            no.daysModeAct,education,BMI)
-tempData2 <- tempData %>% left_join(phenos3 %>% select(eid,PheCode,PhenotypeGroup),by='eid')
-df2 <- data.frame()
-system.time(
-  for(i in 1:1480){
-    case <- tempData2 %>% filter(PheCode == PheCodes[i]) %>% mutate(pheno =1)
-    phenotypeGroup <- tempData2 %>% filter(PheCode== PheCodes[i]) %>% select(PhenotypeGroup)
-    control <- tempData2 %>% filter(PhenotypeGroup != phenotypeGroup$PhenotypeGroup[1]) %>% 
-      filter(!eid %in% case$eid) %>%
-      distinct(eid,.keep_all = TRUE) %>% 
-      mutate(pheno=0)
-    dat1 <- case %>% bind_rows(control)
-    fit <- glm(pheno~rs738408+sex+age+smokingStatus+averageTotalIncome+aolIntakeFreq+
-                 no.daysModeAct+education+BMI,
-               family = binomial,data = dat1)
-    fit_estimate <- broom::tidy(fit)
-    df <- data.frame(snp = 'rs738409',
-                     PheCode = PheCodes[i],
-                     phenotype=Phenotypes[i],
-                     beta = fit_estimate$estimate[2],
-                     se=fit_estimate$std.error[2],
-                     p = fit_estimate$p.value[2])
-    df2 <- bind_rows(df2,df)
-    print(paste(i,' was finished!!!'))
-  }
-)
-df2 <- df2 %>% mutate(
-  fdr = p.adjust(p,'fdr')
-)
-write.csv(df2,'phenotypes_rs738409.csv',row.names = F)
-
-###rs58542926
-tempData <- ukb7 %>% select(eid,rs58542926,sex,age,smokingStatus,averageTotalIncome,aolIntakeFreq,
-                            no.daysModeAct,education,BMI)
-tempData2 <- tempData %>% left_join(phenos3 %>% select(eid,PheCode,PhenotypeGroup),by='eid')
-df2 <- data.frame()
-system.time(
-  for(i in 1:1480){
-    case <- tempData2 %>% filter(PheCode == PheCodes[i]) %>% mutate(pheno =1)
-    phenotypeGroup <- tempData2 %>% filter(PheCode== PheCodes[i]) %>% select(PhenotypeGroup)
-    control <- tempData2 %>% filter(PhenotypeGroup != phenotypeGroup$PhenotypeGroup[1]) %>% 
-      filter(!eid %in% case$eid) %>%
-      distinct(eid,.keep_all = TRUE) %>% 
-      mutate(pheno=0)
-    dat1 <- case %>% bind_rows(control)
-    fit <- glm(pheno~rs58542926+sex+age+smokingStatus+averageTotalIncome+aolIntakeFreq+
-                 no.daysModeAct+education+BMI,
-               family = binomial,data = dat1)
-    fit_estimate <- broom::tidy(fit)
-    df <- data.frame(snp = 'rs58542926',
-                     PheCode = PheCodes[i],
-                     phenotype=Phenotypes[i],
-                     beta = fit_estimate$estimate[2],
-                     se=fit_estimate$std.error[2],
-                     p = fit_estimate$p.value[2])
-    df2 <- bind_rows(df2,df)
-    print(paste(i,' was finished!!!'))
-  }
-)
-df2 <- df2 %>% mutate(
-  fdr = p.adjust(p,'fdr')
-)
-write.csv(df2,'phenotypes_rs58542926.csv',row.names = F)
-
-###rs429358
-tempData <- ukb7 %>% select(eid,rs429358,sex,age,smokingStatus,averageTotalIncome,aolIntakeFreq,
-                            no.daysModeAct,education,BMI)
-tempData2 <- tempData %>% left_join(phenos3 %>% select(eid,PheCode,PhenotypeGroup),by='eid')
-df2 <- data.frame()
-system.time(
-  for(i in 1:1480){
-    case <- tempData2 %>% filter(PheCode == PheCodes[i]) %>% mutate(pheno =1)
-    phenotypeGroup <- tempData2 %>% filter(PheCode== PheCodes[i]) %>% select(PhenotypeGroup)
-    control <- tempData2 %>% filter(PhenotypeGroup != phenotypeGroup$PhenotypeGroup[1]) %>% 
-      filter(!eid %in% case$eid) %>%
-      distinct(eid,.keep_all = TRUE) %>% 
-      mutate(pheno=0)
-    dat1 <- case %>% bind_rows(control)
-    fit <- glm(pheno~rs429358+sex+age+smokingStatus+averageTotalIncome+aolIntakeFreq+
-                 no.daysModeAct+education+BMI,
-               family = binomial,data = dat1)
-    fit_estimate <- broom::tidy(fit)
-    df <- data.frame(snp = 'rs429358',
-                     PheCode = PheCodes[i],
-                     phenotype=Phenotypes[i],
-                     beta = fit_estimate$estimate[2],
-                     se=fit_estimate$std.error[2],
-                     p = fit_estimate$p.value[2])
-    df2 <- bind_rows(df2,df)
-    print(paste(i,' was finished!!!'))
-  }
-)
-df2 <- df2 %>% mutate(
-  fdr = p.adjust(p,'fdr')
-)
-write.csv(df2,'phenotypes_rs429358.csv',row.names = F)
-
-###rs188247550
-tempData <- ukb7 %>% select(eid,rs188247550,sex,age,smokingStatus,averageTotalIncome,aolIntakeFreq,
-                            no.daysModeAct,education,BMI)
-tempData2 <- tempData %>% left_join(phenos3 %>% select(eid,PheCode,PhenotypeGroup),by='eid')
-df2 <- data.frame()
-system.time(
-  for(i in 1:1480){
-    case <- tempData2 %>% filter(PheCode == PheCodes[i]) %>% mutate(pheno =1)
-    phenotypeGroup <- tempData2 %>% filter(PheCode== PheCodes[i]) %>% select(PhenotypeGroup)
-    control <- tempData2 %>% filter(PhenotypeGroup != phenotypeGroup$PhenotypeGroup[1]) %>% 
-      filter(!eid %in% case$eid) %>%
-      distinct(eid,.keep_all = TRUE) %>% 
-      mutate(pheno=0)
-    dat1 <- case %>% bind_rows(control)
-    fit <- glm(pheno~rs188247550+sex+age+smokingStatus+averageTotalIncome+aolIntakeFreq+
-                 no.daysModeAct+education+BMI,
-               family = binomial,data = dat1)
-    fit_estimate <- broom::tidy(fit)
-    df <- data.frame(snp = 'rs188247550',
-                     PheCode = PheCodes[i],
-                     phenotype=Phenotypes[i],
-                     beta = fit_estimate$estimate[2],
-                     se=fit_estimate$std.error[2],
-                     p = fit_estimate$p.value[2])
-    df2 <- bind_rows(df2,df)
-    print(paste(i,' was finished!!!'))
-  }
-)
-df2 <- df2 %>% mutate(
-  fdr = p.adjust(p,'fdr')
-)
-write.csv(df2,'phenotypes_rs188247550.csv',row.names = F)
-
-###rs28601761
-tempData <- ukb7 %>% select(eid,rs28601761,sex,age,smokingStatus,averageTotalIncome,aolIntakeFreq,
-                            no.daysModeAct,education,BMI)
-tempData2 <- tempData %>% left_join(phenos3 %>% select(eid,PheCode,PhenotypeGroup),by='eid')
-df2 <- data.frame()
-system.time(
-  for(i in 1:1480){
-    case <- tempData2 %>% filter(PheCode == PheCodes[i]) %>% mutate(pheno =1)
-    phenotypeGroup <- tempData2 %>% filter(PheCode== PheCodes[i]) %>% select(PhenotypeGroup)
-    control <- tempData2 %>% filter(PhenotypeGroup != phenotypeGroup$PhenotypeGroup[1]) %>% 
-      filter(!eid %in% case$eid) %>%
-      distinct(eid,.keep_all = TRUE) %>% 
-      mutate(pheno=0)
-    dat1 <- case %>% bind_rows(control)
-    fit <- glm(pheno~rs28601761+sex+age+smokingStatus+averageTotalIncome+aolIntakeFreq+
-                 no.daysModeAct+education+BMI,
-               family = binomial,data = dat1)
-    fit_estimate <- broom::tidy(fit)
-    df <- data.frame(snp = 'rs28601761',
-                     PheCode = PheCodes[i],
-                     phenotype=Phenotypes[i],
-                     beta = fit_estimate$estimate[2],
-                     se=fit_estimate$std.error[2],
-                     p = fit_estimate$p.value[2])
-    df2 <- bind_rows(df2,df)
-    print(paste(i,' was finished!!!'))
-  }
-)
-df2 <- df2 %>% mutate(
-  fdr = p.adjust(p,'fdr')
-)
-write.csv(df2,'phenotypes_rs28601761.csv',row.names = F)
-
-###rs7096937
-tempData <- ukb7 %>% select(eid,rs7096937,sex,age,smokingStatus,averageTotalIncome,aolIntakeFreq,
-                            no.daysModeAct,education,BMI)
-tempData2 <- tempData %>% left_join(phenos3 %>% select(eid,PheCode,PhenotypeGroup),by='eid')
-df2 <- data.frame()
-system.time(
-  for(i in 1:1480){
-    case <- tempData2 %>% filter(PheCode == PheCodes[i]) %>% mutate(pheno =1)
-    phenotypeGroup <- tempData2 %>% filter(PheCode== PheCodes[i]) %>% select(PhenotypeGroup)
-    control <- tempData2 %>% filter(PhenotypeGroup != phenotypeGroup$PhenotypeGroup[1]) %>% 
-      filter(!eid %in% case$eid) %>%
-      distinct(eid,.keep_all = TRUE) %>% 
-      mutate(pheno=0)
-    dat1 <- case %>% bind_rows(control)
-    fit <- glm(pheno~rs7096937+sex+age+smokingStatus+averageTotalIncome+aolIntakeFreq+
-                 no.daysModeAct+education+BMI,
-               family = binomial,data = dat1)
-    fit_estimate <- broom::tidy(fit)
-    df <- data.frame(snp = 'rs7096937',
-                     PheCode = PheCodes[i],
-                     phenotype=Phenotypes[i],
-                     beta = fit_estimate$estimate[2],
-                     se=fit_estimate$std.error[2],
-                     p = fit_estimate$p.value[2])
-    df2 <- bind_rows(df2,df)
-    print(paste(i,' was finished!!!'))
-  }
-)
-df2 <- df2 %>% mutate(
-  fdr = p.adjust(p,'fdr')
-)
-write.csv(df2,'phenotypes_rs7096937.csv',row.names = F)
-
-###rs1260326
-tempData <- ukb7 %>% select(eid,rs1260326,sex,age,smokingStatus,averageTotalIncome,aolIntakeFreq,
-                            no.daysModeAct,education,BMI)
-tempData2 <- tempData %>% left_join(phenos3 %>% select(eid,PheCode,PhenotypeGroup),by='eid')
-df2 <- data.frame()
-system.time(
-  for(i in 1:1480){
-    case <- tempData2 %>% filter(PheCode == PheCodes[i]) %>% mutate(pheno =1)
-    phenotypeGroup <- tempData2 %>% filter(PheCode== PheCodes[i]) %>% select(PhenotypeGroup)
-    control <- tempData2 %>% filter(PhenotypeGroup != phenotypeGroup$PhenotypeGroup[1]) %>% 
-      filter(!eid %in% case$eid) %>%
-      distinct(eid,.keep_all = TRUE) %>% 
-      mutate(pheno=0)
-    dat1 <- case %>% bind_rows(control)
-    fit <- glm(pheno~rs1260326+sex+age+smokingStatus+averageTotalIncome+aolIntakeFreq+
-                 no.daysModeAct+education+BMI,
-               family = binomial,data = dat1)
-    fit_estimate <- broom::tidy(fit)
-    df <- data.frame(snp = 'rs1260326',
-                     PheCode = PheCodes[i],
-                     phenotype=Phenotypes[i],
-                     beta = fit_estimate$estimate[2],
-                     se=fit_estimate$std.error[2],
-                     p = fit_estimate$p.value[2])
-    df2 <- bind_rows(df2,df)
-    print(paste(i,' was finished!!!'))
-  }
-)
-df2 <- df2 %>% mutate(
-  fdr = p.adjust(p,'fdr')
-)
-write.csv(df2,'phenotypes_rs1260326.csv',row.names = F)
-
-###rs2642438
-tempData <- ukb7 %>% select(eid,rs2642438,sex,age,smokingStatus,averageTotalIncome,aolIntakeFreq,
-                            no.daysModeAct,education,BMI)
-tempData2 <- tempData %>% left_join(phenos3 %>% select(eid,PheCode,PhenotypeGroup),by='eid')
-df2 <- data.frame()
-system.time(
-  for(i in 1:1480){
-    case <- tempData2 %>% filter(PheCode == PheCodes[i]) %>% mutate(pheno =1)
-    phenotypeGroup <- tempData2 %>% filter(PheCode== PheCodes[i]) %>% select(PhenotypeGroup)
-    control <- tempData2 %>% filter(PhenotypeGroup != phenotypeGroup$PhenotypeGroup[1]) %>% 
-      filter(!eid %in% case$eid) %>%
-      distinct(eid,.keep_all = TRUE) %>% 
-      mutate(pheno=0)
-    dat1 <- case %>% bind_rows(control)
-    fit <- glm(pheno~rs2642438+sex+age+smokingStatus+averageTotalIncome+aolIntakeFreq+
-                 no.daysModeAct+education+BMI,
-               family = binomial,data = dat1)
-    fit_estimate <- broom::tidy(fit)
-    df <- data.frame(snp = 'rs2642438',
-                     PheCode = PheCodes[i],
-                     phenotype=Phenotypes[i],
-                     beta = fit_estimate$estimate[2],
-                     se=fit_estimate$std.error[2],
-                     p = fit_estimate$p.value[2])
-    df2 <- bind_rows(df2,df)
-    print(paste(i,' was finished!!!'))
-  }
-)
-df2 <- df2 %>% mutate(
-  fdr = p.adjust(p,'fdr')
-)
-write.csv(df2,'phenotypes_rs2642438.csv',row.names = F)
-
-###rs1229984
-tempData <- ukb7 %>% select(eid,rs1229984,sex,age,smokingStatus,averageTotalIncome,aolIntakeFreq,
-                            no.daysModeAct,education,BMI)
-tempData2 <- tempData %>% left_join(phenos3 %>% select(eid,PheCode,PhenotypeGroup),by='eid')
-df2 <- data.frame()
-system.time(
-  for(i in 1:1480){
-    case <- tempData2 %>% filter(PheCode == PheCodes[i]) %>% mutate(pheno =1)
-    phenotypeGroup <- tempData2 %>% filter(PheCode== PheCodes[i]) %>% select(PhenotypeGroup)
-    control <- tempData2 %>% filter(PhenotypeGroup != phenotypeGroup$PhenotypeGroup[1]) %>% 
-      filter(!eid %in% case$eid) %>%
-      distinct(eid,.keep_all = TRUE) %>% 
-      mutate(pheno=0)
-    dat1 <- case %>% bind_rows(control)
-    fit <- glm(pheno~rs1229984+sex+age+smokingStatus+averageTotalIncome+aolIntakeFreq+
-                 no.daysModeAct+education+BMI,
-               family = binomial,data = dat1)
-    fit_estimate <- broom::tidy(fit)
-    df <- data.frame(snp = 'rs1229984',
-                     PheCode = PheCodes[i],
-                     phenotype=Phenotypes[i],
-                     beta = fit_estimate$estimate[2],
-                     se=fit_estimate$std.error[2],
-                     p = fit_estimate$p.value[2])
-    df2 <- bind_rows(df2,df)
-    print(paste(i,' was finished!!!'))
-  }
-)
-df2 <- df2 %>% mutate(
-  fdr = p.adjust(p,'fdr')
-)
-write.csv(df2,'phenotypes_rs1229984.csv',row.names = F)
-
-###rs79905393
-tempData <- ukb7 %>% select(eid,rs79905393,sex,age,smokingStatus,averageTotalIncome,aolIntakeFreq,
-                            no.daysModeAct,education,BMI)
-tempData2 <- tempData %>% left_join(phenos3 %>% select(eid,PheCode,PhenotypeGroup),by='eid')
-df2 <- data.frame()
-system.time(
-  for(i in 1:1480){
-    case <- tempData2 %>% filter(PheCode == PheCodes[i]) %>% mutate(pheno =1)
-    phenotypeGroup <- tempData2 %>% filter(PheCode== PheCodes[i]) %>% select(PhenotypeGroup)
-    control <- tempData2 %>% filter(PhenotypeGroup != phenotypeGroup$PhenotypeGroup[1]) %>% 
-      filter(!eid %in% case$eid) %>%
-      distinct(eid,.keep_all = TRUE) %>% 
-      mutate(pheno=0)
-    dat1 <- case %>% bind_rows(control)
-    fit <- glm(pheno~rs79905393+sex+age+smokingStatus+averageTotalIncome+aolIntakeFreq+
-                 no.daysModeAct+education+BMI,
-               family = binomial,data = dat1)
-    fit_estimate <- broom::tidy(fit)
-    df <- data.frame(snp = 'rs79905393',
-                     PheCode = PheCodes[i],
-                     phenotype=Phenotypes[i],
-                     beta = fit_estimate$estimate[2],
-                     se=fit_estimate$std.error[2],
-                     p = fit_estimate$p.value[2])
-    df2 <- bind_rows(df2,df)
-    print(paste(i,' was finished!!!'))
-  }
-)
-df2 <- df2 %>% mutate(
-  fdr = p.adjust(p,'fdr')
-)
-write.csv(df2,'phenotypes_rs79905393.csv',row.names = F)
-
-
-###rs62226381
-tempData <- ukb7 %>% select(eid,rs62226381,sex,age,smokingStatus,averageTotalIncome,aolIntakeFreq,
-                            no.daysModeAct,education,BMI)
-tempData2 <- tempData %>% left_join(phenos3 %>% select(eid,PheCode,PhenotypeGroup),by='eid')
-df2 <- data.frame()
-system.time(
-  for(i in 1:1480){
-    case <- tempData2 %>% filter(PheCode == PheCodes[i]) %>% mutate(pheno =1)
-    phenotypeGroup <- tempData2 %>% filter(PheCode== PheCodes[i]) %>% select(PhenotypeGroup)
-    control <- tempData2 %>% filter(PhenotypeGroup != phenotypeGroup$PhenotypeGroup[1]) %>% 
-      filter(!eid %in% case$eid) %>%
-      distinct(eid,.keep_all = TRUE) %>% 
-      mutate(pheno=0)
-    dat1 <- case %>% bind_rows(control)
-    fit <- glm(pheno~rs62226381+sex+age+smokingStatus+averageTotalIncome+aolIntakeFreq+
-                 no.daysModeAct+education+BMI,
-               family = binomial,data = dat1)
-    fit_estimate <- broom::tidy(fit)
-    df <- data.frame(snp = 'rs62226381',
-                     PheCode = PheCodes[i],
-                     phenotype=Phenotypes[i],
-                     beta = fit_estimate$estimate[2],
-                     se=fit_estimate$std.error[2],
-                     p = fit_estimate$p.value[2])
-    df2 <- bind_rows(df2,df)
-    print(paste(i,' was finished!!!'))
-  }
-)
-df2 <- df2 %>% mutate(
-  fdr = p.adjust(p,'fdr')
-)
-write.csv(df2,'phenotypes_rs62226381.csv',row.names = F)
-
-pws <- read.csv('phewas_results.csv')
-pws738409 <- read.csv('phenotypes_rs738409.csv')
-pws429358 <- read.csv('phenotypes_rs429358.csv')
-pws58242926 <- read.csv('phenotypes_rs58542926.csv')
-pws1229984 <- read.csv('phenotypes_rs1229984.csv')
-pws1260326 <- read.csv('phenotypes_rs1260326.csv')
-pws2642438 <- read.csv('phenotypes_rs2642438.csv')
-pws7096937 <- read.csv('phenotypes_rs7096937.csv')
-pws28601761 <- read.csv('phenotypes_rs28601761.csv')
-pws62226381 <- read.csv('phenotypes_rs62226381.csv')
-pws79905393 <- read.csv('phenotypes_rs79905393.csv')
-pws188247550 <- read.csv('phenotypes_rs188247550.csv')
-pws_snps <- pws738409 %>% bind_rows(pws429358) %>% bind_rows(pws58242926) %>% bind_rows(pws1229984) %>%
-  bind_rows(pws1260326) %>% bind_rows(pws2642438) %>% bind_rows(pws7096937) %>% bind_rows(pws28601761) %>%
-  bind_rows(pws62226381) %>% bind_rows(pws79905393) %>% bind_rows(pws188247550)
-write.csv(pws_snps,'pws_11snps.csv',row.names = F)
-
-pws_snps <- pws_snps %>% left_join(pws%>%select(PheCode,PhenotypeGroup),by='PheCode')
-pws2 <- pws %>% select(PheCode,phenotype,beta,se,PhenotypeGroup,q) %>% 
-  rename(fdr = q) %>% mutate(snp = 'MRI-HFC-PRS') %>% bind_rows(pws_snps)
-pws2 <- pws2 %>% mutate(snp = factor(snp,levels =  c('MRI-HFC-PRS','rs2642438','rs1260326','rs79905393',
-                                                     'rs1229984','rs28601761','rs7096937','rs58542926',
-                                                     'rs188247550','rs429358','rs738409','rs62226381')))
-
-
-ors2 <- pws2 %>% filter(fdr<0.05)
-ors2 <- ors2 %>% mutate(
-  OR = exp(beta),
-  lwr = exp(beta-1.96*se),
-  upr = exp(beta+1.96*se),
-  PhenotypeGroup = factor(PhenotypeGroup,levels = rev(unique(phenoGroup$PhenotypeGroup)))
-)
-ors2 <- ors2 %>% mutate(
-  phenos = interaction(phenotype,PhenotypeGroup,drop = T)
-)
-ors2 <- ors2 %>% mutate(
-  OR_group = cut(OR,breaks = c(0.3,0.6,0.8,0.9,1,1.2,1.4,1.6,1.8,2,4),
-                 labels = c('<0.60','0.60-0.80','0.81-0.90',
-                            '0.91-1.00','1.01-1.20',
-                            '1.21-1.40','1.41-1.60',
-                            '1.61-1.80','1.81-2.00',
-                            '>2.00'),
-                 include.lowest = TRUE, right = F)
-)
-
-ggplot(ors2,aes(snp,phenos))+
-  geom_tile(aes(fill = OR_group),color='gray20')+
-  scale_fill_manual(name = 'Odds ratio',values = c('#253473FF','#08519c','#6baed6','#c6dbef',
-                                                   '#fee0d2','#fcbba1','#fc9272','#ef3b2c','#cb181d','#941B0CFF'))+
-  geom_vline(xintercept = seq(1.5,9.5,by=1),color='gray20')+
-  geom_hline(yintercept = seq(0.5,182.5,by=1),color='gray20')+
-  theme_test(base_size = 12)+labs(x=NULL,y=NULL)+
-  scale_y_discrete(labels = gsub('\\.[a-zA-Z/ ]+','',levels(ors2$phenos)),
-                   expand = c(0,0))+
-  scale_x_discrete(expand = c(0,0))+
-  theme(axis.text.x = element_text(angle = 45, hjust=1),
-        legend.key.height = unit(.1,'cm'),
-        legend.spacing.y = unit(.3,'cm'))
 
 ####phenotypes OR plot
 phewas_res <- read.csv('phewas_results.csv')
@@ -1984,8 +1494,6 @@ plot_grid(a+theme(legend.position = 'none'),
           rel_widths = c(1,.8))
 
 ###---MVMR--------------------------------------------------------------------------
-##for hepatitis, PLC, ALD, cirrhosis and ascites, we further adjusted for smoking and alcohol drinking
-##for T2D, hypercholesterolemia, CAD, chest pain, we further adjusted for BMI, WHR and smoking
 library(MVMR)
 library(TwoSampleMR)
 ####finding the significant SNPs for all GWAS
@@ -2038,7 +1546,6 @@ df <- as.data.frame(res) %>% mutate(
   exposure = c('BMI','Smoking','Alcohol','HFC','WHR'),
   outcome  = 'Primary liver cancer'
 )
-rm(list = c('LC','LC2'))
 
 CHP <- fread('finngen_R7_K11_CHRONHEP.gz')
 CHR2 <- CHP %>% filter(rsids %in% exposure.data$SNP) %>% select(beta,sebeta,rsids) %>%
@@ -2057,7 +1564,6 @@ df <- df %>% bind_rows(as.data.frame(res) %>% mutate(
   exposure = c('BMI','Smoking','Alcohol','HFC','WHR'),
   outcome  = 'Hepatitis NOS'
 ))
-rm(list = c('CHP','bmi','smoking','alcohol','hfc'))
 
 t2d <- fread('Mahajan.NatGenet2018b.T2D-noUKBB.European.txt')
 hfc2c <- hfc2c %>% mutate(SNP2 = paste0(chr_name,":",chrom_start))
@@ -2080,8 +1586,6 @@ df <- df %>% bind_rows(as.data.frame(res) %>% mutate(
   outcome  = 'Type 2 diabetes'
 ))
 
-rm(list = c('t2d','t2d2'))
-
 HLA <- fread('DYSLIPID_GERA.txt.gz')
 HLA2 <- HLA %>% filter(name %in% exposure.data$SNP) %>% select(frequentist_add_beta_1,frequentist_add_se_1,name) %>%
   rename(SNP=name,beta.out=frequentist_add_beta_1,se.out=frequentist_add_se_1)
@@ -2099,7 +1603,6 @@ df <- df %>% bind_rows(as.data.frame(res) %>% mutate(
   exposure = c('BMI','Smoking','Alcohol','HFC','WHR'),
   outcome  = 'Hypercholesterolemia'
 ))
-rm(list = c('HLA','HLA2'))
 
 ALD <- fread('finngen_R7_ALCOLIVER.gz')
 ALD2 <- ALD %>% filter(rsids %in% exposure.data$SNP) %>% select(beta,sebeta,rsids) %>%
@@ -2118,7 +1621,6 @@ df <- df %>% bind_rows(as.data.frame(res) %>% mutate(
   exposure = c('BMI','Smoking','Alcohol','HFC','WHR'),
   outcome  = 'Alcoholic liver damage'
 ))
-rm(list = c('ALD','ALD2'))
 
 cad <- fread('cad_european.tsv.gz')
 cad2 <- cad %>% filter(name %in% exposure.data$SNP) %>% select(beta,standard_error,name) %>%
@@ -2137,8 +1639,6 @@ df <- df %>% bind_rows(as.data.frame(res) %>% mutate(
   exposure = c('BMI','Smoking','Alcohol','HFC','WHR'),
   outcome  = 'Coronary artery disease'
 ))
-rm(list = c('cad','cad2'))
-
 
 CP <- fread('finngen_R7_R18_PAIN_THROAT_CHEST.gz')
 CP2 <- CP %>% filter(rsids %in% exposure.data$SNP) %>% select(beta,sebeta,rsids) %>%
@@ -2157,7 +1657,6 @@ df <- df %>% bind_rows(as.data.frame(res) %>% mutate(
   exposure = c('BMI','Smoking','Alcohol','HFC','WHR'),
   outcome  = 'Nonspecific chest pain'
 ))
-rm(list = c('CP','CP2'))
 
 LCi <- fread('finngen_R7_CIRRHOSIS_BROAD.gz')
 LCi2 <- LCi %>% filter(rsids %in% exposure.data$SNP) %>% select(beta,sebeta,rsids) %>%
@@ -2176,7 +1675,6 @@ df <- df %>% bind_rows(as.data.frame(res) %>% mutate(
   exposure = c('BMI','Smoking','Alcohol','HFC','WHR'),
   outcome  = 'Liver cirrhosis'
 ))
-rm(list = c('LCi','LCi2'))
 
 ASC <- fread('finngen_R7_R18_ASCITES.gz')
 ASC2 <- ASC %>% filter(rsids %in% exposure.data$SNP) %>% select(beta,sebeta,rsids) %>%
@@ -2195,7 +1693,6 @@ df <- df %>% bind_rows(as.data.frame(res) %>% mutate(
   exposure = c('BMI','Smoking','Alcohol','HFC','WHR'),
   outcome  = 'Ascites'
 ))
-rm(list = c('ASC','ASC2'))
 
 write.csv(df,'MVMR_MRI_HFC.csv',row.names = F)
 
@@ -2245,95 +1742,6 @@ ggplot(mvmr_res,aes(OR,outcome,color = exposure))+
 
 
 ####---mediation analysis--------------------------------------------------------------
-####finding the association between biomarkers (medaitors) and diseases (outcomes)
-
-tempData <- ukb7 %>% select(1,76,77,111:175,94,2,90,19,29,22,202,203,206:210)
-tempData2 <- tempData %>% left_join(phenos3 %>% select(eid,PheCode,PhenotypeGroup),by='eid')
-bios <- names(tempData2)[2:68]
-disease_list <- list(c(530.2,571.81,571.8,571.5,571.51),
-                     c(155,155.1),
-                     c(70.9),
-                     c(250.2),
-                     c(272.11),
-                     c(317.11),
-                     c(411.3,411.2,411.8),
-                     c(418),
-                     c(572))
-outcomes <- c('Liver cirrhosis','PLC','Hepatitis NOS','T2D','Hypercholesterolemia',
-              'ALD','CAD','Chest pain','Ascites')
-df2 <- data.frame()
-system.time(
-  for(i in 1:9){
-    case <- tempData2 %>% filter(PheCode %in% disease_list[[i]]) %>% 
-      distinct(eid,.keep_all = TRUE) %>%mutate(pheno =1)
-    phenotypeGroup <- tempData2 %>% filter(PheCode== disease_list[[i]][1]) %>% select(PhenotypeGroup)
-    control <- tempData2 %>% filter(PhenotypeGroup != phenotypeGroup$PhenotypeGroup[1]) %>% 
-      filter(!eid %in% case$eid) %>%
-      distinct(eid,.keep_all = TRUE) %>% 
-      mutate(pheno=0)
-    dat1 <- case %>% bind_rows(control)
-    for(j in 1:67){
-      biomarker = get(bios[j],pos = dat1)
-      fit <- glm(pheno~scale(biomarker)+sex+age+smokingStatus+averageTotalIncome+aolIntakeFreq+
-                   no.daysModeAct+education+BMI+loweringCHL+loweringINS+loweringBP+VD_supple+HFCGRS,
-                 family = binomial,data = dat1)
-      fit_estimate <- broom::tidy(fit)
-      df <- data.frame(outcome = outcomes[i],
-                       biomarker=bios[j],
-                       beta = fit_estimate$estimate[2],
-                       se=fit_estimate$std.error[2],
-                       p = fit_estimate$p.value[2])
-      df2 <- bind_rows(df2,df)
-      print(paste(j,'th biomarker was finished!!!'))
-    }
-    #df3 <- bind_rows(df3,df2)
-    print(paste(i,'th disease was finished!!!'))
-  }
-)
-df2 <- df2 %>% group_by(outcome) %>%
-  mutate(fdr = p.adjust(p,'fdr')) %>% ungroup()
-write.csv(df2,'biomarker-to-diseases.csv',row.names = F)
-
-####finding the association between HFC (exposure) and diseases (outcomes)
-df2 <- data.frame()
-system.time(
-  for(i in 1:9){
-    case <- tempData2 %>% filter(PheCode %in% disease_list[[i]]) %>% 
-      distinct(eid,.keep_all = TRUE) %>%mutate(pheno =1)
-    phenotypeGroup <- tempData2 %>% filter(PheCode== disease_list[[i]][1]) %>% select(PhenotypeGroup)
-    control <- tempData2 %>% filter(PhenotypeGroup != phenotypeGroup$PhenotypeGroup[1]) %>% 
-      filter(!eid %in% case$eid) %>%
-      distinct(eid,.keep_all = TRUE) %>% 
-      mutate(pheno=0)
-    dat1 <- case %>% bind_rows(control)
-    fit <- glm(pheno~scale(HFCGRS)+sex+age+smokingStatus+averageTotalIncome+aolIntakeFreq+
-                   no.daysModeAct+education+BMI,
-                 family = binomial,data = dat1)
-    fit_estimate <- broom::tidy(fit)
-    df <- data.frame(outcome = outcomes[i],
-                     exposure='HFC',
-                     beta = fit_estimate$estimate[2],
-                     se=fit_estimate$std.error[2],
-                     p = fit_estimate$p.value[2])
-      df2 <- bind_rows(df2,df)
-      print(paste(i,'th disease was finished!!!'))
-    }
-)
-df2 <- df2 %>% group_by(outcome) %>%
-  mutate(fdr = p.adjust(p,'fdr')) %>% ungroup()
-write.csv(df2,'HFC-to-9diseases.csv',row.names = F)
-
-
-
-
-
-bios_data <- ukb7 %>% dplyr::select(76,77,111:175)
-bios_data2 <- apply(bios_data,2,function(x) ifelse(is.na(x),median(x,na.rm=T),x))
-bios_data2 <- as.data.frame(bios_data2)
-tempData <- ukb7 %>% dplyr::select(1,94,2,90,19,29,22,202,203,206:210) %>% bind_cols(bios_data2)
-tempData2 <- tempData %>% left_join(phenos3 %>% dplyr::select(eid,PheCode,PhenotypeGroup),by='eid')
-tempData2 <- fread('data_for_mediation.csv')
-
 ####run on LINUX
 library(mediation)
 tempData2 <- fread('data_for_mediation.csv')
@@ -2509,102 +1917,4 @@ ggplot(mediating3,aes(outcome,BiomarkerNames))+
         axis.text = element_text(size=11,color='black'),
         legend.key.height = unit(.1,'cm'),
         legend.spacing.y = unit(.3,'cm'))
-
-
-
-
-
-
-####table1-------------------------------
-
-diagData <- fread('E:\\UkbData\\diagData_icd10.csv')
-
-diagData <- diagData %>% 
-  mutate(SLD = if_else(grepl('^C22|^K746|I859|I982|I864|I850|I983|R18',Diagnosis),1,0))
-
-baseline_lds <- diagData %>%
-  filter(SLD==1) %>%
-  select(eid)
-pdff <- read.csv('pdff_33718.csv')
-pdff2 <- pdff %>% filter(!eid.63726 %in% baseline_lds$eid)#n=33592 (-126)
-
-
-ukb8 <- ukb3 %>% mutate(
-  sets = ifelse(eid %in% pdff2$eid.63726,'gwas',
-                ifelse(eid %in% ukb7$eid,'phewas','none'))
-)
-ukb8 <- ukb8 %>% filter(sets != 'none') %>%
-  mutate(
-    age = year(dateAttendingCentre)-YearOfBirth,
-    education = ifelse(!is.na(educationScore),educationScore,
-                       ifelse(!is.na(f.26421.0.0),f.26421.0.0,f.26431.0.0))) %>% 
-  mutate(
-    education = ifelse(is.na(education),median(education,na.rm = T),education),
-    averageTotalIncome = ifelse(is.na(averageTotalIncome)|averageTotalIncome<0,
-                                median(averageTotalIncome,na.rm = T),averageTotalIncome),
-    aolIntakeFreq = ifelse(!aolIntakeFreq %in% 1:6,3,aolIntakeFreq),
-    BMI = ifelse(is.na(BMI),median(BMI,na.rm = T),BMI),
-    smokingStatus = ifelse(!smokingStatus%in% 0:2,0,smokingStatus),
-    no.daysModeAct = ifelse(no.daysModeAct<0|is.na(no.daysModeAct),3,no.daysModeAct)
-  ) %>% mutate(
-    no.daysModeAct = ifelse(no.daysModeAct<2,'0-1',ifelse(no.daysModeAct<5,'2-4','5-7')),
-    aolIntakeFreq = ifelse(aolIntakeFreq>=5,'Never',ifelse(aolIntakeFreq<=2,'Excess','Moderate')),
-    aolIntakeFreq = factor(aolIntakeFreq,levels = c('Never','Moderate','Excess')),
-    BMIgroup      = ifelse(BMI<18.5,0,ifelse(BMI<25,1,ifelse(BMI<30,2,3)))
-  )
-
-table(ukb8$sex,ukb8$sets)
-prop.table(table(ukb8$sex,ukb8$sets),2)
-chisq.test(table(ukb8$sex,ukb8$sets))
-
-tapply(ukb8$age,ukb8$sets,mean)
-tapply(ukb8$age,ukb8$sets,sd)
-t.test(ukb8$age~ukb8$sets)
-
-tapply(ukb8$education,ukb8$sets,fivenum)
-
-table(ukb8$averageTotalIncome,ukb8$sets)
-prop.table(table(ukb8$averageTotalIncome,ukb8$sets),2)
-chisq.test(table(ukb8$averageTotalIncome,ukb8$sets))
-
-table(ukb8$aolIntakeFreq,ukb8$sets)
-prop.table(table(ukb8$aolIntakeFreq,ukb8$sets),2)
-chisq.test(table(ukb8$aolIntakeFreq,ukb8$sets))
-
-table(ukb8$smokingStatus,ukb8$sets)
-prop.table(table(ukb8$smokingStatus,ukb8$sets),2)
-chisq.test(table(ukb8$smokingStatus,ukb8$sets))
-
-table(ukb8$no.daysModeAct,ukb8$sets)
-prop.table(table(ukb8$no.daysModeAct,ukb8$sets),2)
-chisq.test(table(ukb8$no.daysModeAct,ukb8$sets))
-
-table(ukb8$BMIgroup,ukb8$sets)
-prop.table(table(ukb8$BMIgroup,ukb8$sets),2)
-chisq.test(table(ukb8$BMIgroup,ukb8$sets))
-
-
-tapply(ukb8$ALT,ukb8$sets,mean,na.rm=T)
-tapply(ukb8$ALT,ukb8$sets,sd,na.rm=T)
-t.test(ukb8$ALT~ukb8$sets)
-
-tapply(ukb8$AST,ukb8$sets,mean,na.rm=T)
-tapply(ukb8$AST,ukb8$sets,sd,na.rm=T)
-t.test(ukb8$AST~ukb8$sets)
-
-tapply(ukb8$GGT,ukb8$sets,mean,na.rm=T)
-tapply(ukb8$GGT,ukb8$sets,sd,na.rm=T)
-t.test(ukb8$GGT~ukb8$sets)
-
-tapply(ukb8$ALP,ukb8$sets,mean,na.rm=T)
-tapply(ukb8$ALP,ukb8$sets,sd,na.rm=T)
-t.test(ukb8$ALP~ukb8$sets)
-
-tapply(ukb8$ALB,ukb8$sets,mean,na.rm=T)
-tapply(ukb8$ALB,ukb8$sets,sd,na.rm=T)
-t.test(ukb8$ALB~ukb8$sets)
-
-tapply(ukb8$DBi,ukb8$sets,mean,na.rm=T)
-tapply(ukb8$DBi,ukb8$sets,sd,na.rm=T)
-t.test(ukb8$DBi~ukb8$sets)
 
